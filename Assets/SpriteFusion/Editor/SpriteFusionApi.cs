@@ -57,6 +57,8 @@ namespace SpriteFusion
         public string updatedAt;
         public string sourceImageUrl;
         public string spritesheetUrl;
+        // Place in the batch (text-to-image shuffles all but the first); -1 when the server sends none.
+        public int batchIndex = -1;
     }
 
     [Serializable]

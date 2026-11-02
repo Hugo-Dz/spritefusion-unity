@@ -14,8 +14,8 @@ namespace SpriteFusion
         const string OutputDir = "Assets/SpriteFusion/Generated";
         const int AnimationOutputFrames = 8;
         const int AnimationColors = 24;
-        static readonly int[] GenerationSizes = { 64, 32, 16 };
-        static readonly string[] GenerationSizeLabels = { "64x64", "32x32", "16x16" };
+        static readonly int[] GenerationSizes = { 128, 112, 96, 80, 64, 48, 32, 24, 16 };
+        static readonly string[] GenerationSizeLabels = { "128x128", "112x112", "96x96", "80x80", "64x64", "48x48", "32x32", "24x24", "16x16" };
 
         Session _session;
         AssetRegistry _registry;
@@ -26,7 +26,7 @@ namespace SpriteFusion
         bool _pollCancelled;
 
         string _prompt = "";
-        int _selectedGenerationSizeIndex;
+        int _selectedGenerationSize = 64;
         string _animationPrompt = "";
         int _selectedSourceIndex;
         [NonSerialized] bool _isGenerating;
@@ -97,10 +97,10 @@ namespace SpriteFusion
             EditorGUILayout.Space(8);
             EditorGUILayout.LabelField("Generate", EditorStyles.boldLabel);
             _prompt = EditorGUILayout.TextArea(_prompt, GUILayout.MinHeight(60));
-            _selectedGenerationSizeIndex = Mathf.Clamp(
-                EditorGUILayout.Popup("Size", _selectedGenerationSizeIndex, GenerationSizeLabels),
+            _selectedGenerationSize = GenerationSizes[Mathf.Clamp(
+                EditorGUILayout.Popup("Size", Array.IndexOf(GenerationSizes, _selectedGenerationSize), GenerationSizeLabels),
                 0,
-                GenerationSizes.Length - 1);
+                GenerationSizes.Length - 1)];
             using (new EditorGUI.DisabledScope(_isGenerating))
                 if (GUILayout.Button(_isGenerating ? "Generating..." : "Generate"))
                     _ = HandleGenerate();
@@ -285,9 +285,7 @@ namespace SpriteFusion
             {
                 if (!await EnsureFreshSession()) return;
 
-                var size = GenerationSizes[Mathf.Clamp(
-                    _selectedGenerationSizeIndex, 0, GenerationSizes.Length - 1)];
-                var payload = JsonUtility.ToJson(new ImagePayload { operation = "generate", prompt = prompt, size = size });
+                var payload = JsonUtility.ToJson(new ImagePayload { operation = "generate", prompt = prompt, size = _selectedGenerationSize });
                 var response = await Api.PostJson("/api/v1/generate", payload,
                     _session.access_token, Api.GenerationTimeout);
 
@@ -328,6 +326,11 @@ namespace SpriteFusion
                     SetStatus("Generation returned no image.");
                     return;
                 }
+                // In batch order: sprites stream as they are ready, and each image asset's batchIndex is its place in the batch.
+                assets = assets.Select((asset, arrival) => (asset, arrival))
+                    .OrderBy(entry => entry.asset.batchIndex >= 0 ? entry.asset.batchIndex : entry.arrival)
+                    .Select(entry => entry.asset)
+                    .ToList();
 
                 var downloadable = assets
                     .Where(a => a != null && !string.IsNullOrEmpty(a.assetUrl)).ToList();

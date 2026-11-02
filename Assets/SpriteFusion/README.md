@@ -8,7 +8,7 @@ Open `Window > Sprite Fusion`, click `Connect`, and approve the device code in y
 
 ## Generate
 
-Enter a prompt, choose `16x16`, `32x32`, or `64x64`, and click `Generate`. Up to 12 generated images are saved under `Assets/SpriteFusion/Generated`.
+Enter a prompt, choose a size from `16x16` to `128x128`, and click `Generate`. The generated images are saved under `Assets/SpriteFusion/Generated`.
 
 ## Animate
 
