@@ -326,7 +326,7 @@ namespace SpriteFusion
                     SetStatus("Generation returned no image.");
                     return;
                 }
-                // In batch order: sprites stream as they are ready, and each image asset's batchIndex is its place in the batch.
+                // Keep the server's order (batchIndex), else arrival order.
                 assets = assets.Select((asset, arrival) => (asset, arrival))
                     .OrderBy(entry => entry.asset.batchIndex >= 0 ? entry.asset.batchIndex : entry.arrival)
                     .Select(entry => entry.asset)
